@@ -1,0 +1,14 @@
+﻿{
+  "name": "com.edanoue.hybrid-graph",
+  "displayName": "Edanoue Hybrid Graph",
+  "version": "0.1.0",
+  "unity": "2023.1",
+  "description": "",
+  "dependencies": {
+  },
+  "author": {
+    "name": "Edanoue, Inc.",
+    "email": "contact@edanoue.com",
+    "url": "https://edanoue.com"
+  }
+}
