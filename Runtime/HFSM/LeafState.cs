@@ -13,12 +13,15 @@ namespace Edanoue.HybridGraph
     public abstract class LeafState<TBlackboard> : IGraphNode
     {
         /// <summary>
-        /// 内部用のTransition Table
-        /// 遷移先を辞書形式で保存している
+        /// <para>内部用のTransition Table (Trigger 用)</para>
         /// </summary>
         private readonly Dictionary<int, IGraphNode> _transitionTable = new();
 
-        private readonly Dictionary<Func<bool>, IGraphNode> _transitionTableWithCondition = new();
+        /// <summary>
+        /// <para>Transition Table (Condition 用)</para>
+        /// <remarks>Trigger とは異なり同一 Node に対しての複数 Condition を許可しないため Key, Value を逆に</remarks>
+        /// </summary>
+        private readonly Dictionary<IGraphNode, Func<bool>> _transitionTableWithCondition = new();
 
         private CancellationTokenSource? _onExitCts;
 
@@ -32,6 +35,7 @@ namespace Edanoue.HybridGraph
         /// <summary>
         /// Gets the cancellation token raised when the State is exited.
         /// </summary>
+        [Obsolete]
         protected CancellationToken CancellationTokenOnExit
         {
             get
@@ -57,12 +61,13 @@ namespace Edanoue.HybridGraph
 
         void IGraphItem.Connect(Func<bool> condition, IGraphItem nextNode)
         {
-            if (_transitionTableWithCondition.ContainsKey(condition))
+            var entryNode = nextNode.GetEntryNode();
+            if (_transitionTableWithCondition.ContainsKey(entryNode))
             {
-                throw new ArgumentException($"Already registered condition: {condition}");
+                throw new ArgumentException($"Already registered condition to {nextNode}");
             }
 
-            _transitionTableWithCondition.Add(condition, nextNode.GetEntryNode());
+            _transitionTableWithCondition.Add(entryNode, condition);
         }
 
         void IGraphItem.OnInitializedInternal(object blackboard, IGraphBox parent)
@@ -109,9 +114,10 @@ namespace Edanoue.HybridGraph
         {
             foreach (var pair in _transitionTableWithCondition)
             {
-                if (pair.Key())
+                // Check condition
+                if (pair.Value())
                 {
-                    nextNode = pair.Value;
+                    nextNode = pair.Key;
                     return true;
                 }
             }
