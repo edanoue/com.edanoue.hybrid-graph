@@ -16,20 +16,21 @@ namespace Edanoue.HybridGraph
         /// 内部用のTransition Table
         /// 遷移先を辞書形式で保存している
         /// </summary>
-        // ReSharper disable once InconsistentNaming
         private readonly Dictionary<int, IGraphNode> _transitionTable = new();
+
+        private readonly Dictionary<Func<bool>, IGraphNode> _transitionTableWithCondition = new();
 
         private CancellationTokenSource? _onExitCts;
 
         private IGraphBox? _parent;
 
         /// <summary>
-        /// Get the blackboard.
+        /// Gets the blackboard.
         /// </summary>
         protected TBlackboard Blackboard = default!;
 
         /// <summary>
-        /// Get the cancellation token raised when the State is exited.
+        /// Gets the cancellation token raised when the State is exited.
         /// </summary>
         protected CancellationToken CancellationTokenOnExit
         {
@@ -44,7 +45,6 @@ namespace Edanoue.HybridGraph
             }
         }
 
-
         void IGraphItem.Connect(int trigger, IGraphItem nextNode)
         {
             if (_transitionTable.ContainsKey(trigger))
@@ -53,6 +53,16 @@ namespace Edanoue.HybridGraph
             }
 
             _transitionTable.Add(trigger, nextNode.GetEntryNode());
+        }
+
+        void IGraphItem.Connect(Func<bool> condition, IGraphItem nextNode)
+        {
+            if (_transitionTableWithCondition.ContainsKey(condition))
+            {
+                throw new ArgumentException($"Already registered condition: {condition}");
+            }
+
+            _transitionTableWithCondition.Add(condition, nextNode.GetEntryNode());
         }
 
         void IGraphItem.OnInitializedInternal(object blackboard, IGraphBox parent)
@@ -65,13 +75,13 @@ namespace Edanoue.HybridGraph
         void IGraphItem.WrappedOnEnter()
         {
             _parent?.WrappedOnEnter();
-            _onExitCts = new CancellationTokenSource();
+            _onExitCts = new CancellationTokenSource(); // ToDo: 必要なときだけ生成するように!
             OnEnter();
         }
 
         void IGraphItem.WrappedOnExecute()
         {
-            OnStay();
+            OnExecute();
         }
 
         void IGraphItem.WrappedOnExit(IGraphItem nextNode)
@@ -95,6 +105,21 @@ namespace Edanoue.HybridGraph
             return _transitionTable.TryGetValue(trigger, out nextNode);
         }
 
+        bool IGraphNode.TryGetNextNodeWithCondition(out IGraphNode nextNode)
+        {
+            foreach (var pair in _transitionTableWithCondition)
+            {
+                if (pair.Key())
+                {
+                    nextNode = pair.Value;
+                    return true;
+                }
+            }
+
+            nextNode = default!;
+            return false;
+        }
+
         public void Dispose()
         {
             // CancellationTokenをキャンセルする
@@ -112,7 +137,7 @@ namespace Edanoue.HybridGraph
         {
         }
 
-        protected virtual void OnStay()
+        protected virtual void OnExecute()
         {
         }
 

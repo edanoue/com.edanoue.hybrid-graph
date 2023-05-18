@@ -26,6 +26,14 @@ namespace Edanoue.HybridGraph
             }
         }
 
+        void IGraphItem.Connect(Func<bool> condition, IGraphItem nextNode)
+        {
+            foreach (var child in _children)
+            {
+                child.Connect(condition, nextNode);
+            }
+        }
+
         void IGraphItem.OnInitializedInternal(object blackboard, IGraphBox parent)
         {
             if (_initialState is not null)
@@ -102,7 +110,7 @@ namespace Edanoue.HybridGraph
             OnDestroy();
         }
 
-        IGraphNode IGraphEntryNode.Run(object blackboard)
+        IGraphNode IGraphEntryNode.InitializeAndGetEntryNode(object blackboard)
         {
             if (_initialState is not null)
             {
@@ -139,6 +147,13 @@ namespace Edanoue.HybridGraph
             var prevState = GetOrCreateState<TPrev>();
             var nextState = GetOrCreateState<TNext>();
             prevState.Connect(trigger, nextState);
+        }
+
+        void IStateBuilder.AddTransition<TPrev, TNext>(Func<bool> condition)
+        {
+            var prevState = GetOrCreateState<TPrev>();
+            var nextState = GetOrCreateState<TNext>();
+            prevState.Connect(condition, nextState);
         }
 
         private bool IsDescendantNode(IGraphItem node)

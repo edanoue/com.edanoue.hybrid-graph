@@ -11,6 +11,6 @@ namespace Edanoue.HybridGraph
         /// HybridGraph により実行されるエントリーポイント
         /// </summary>
         /// <param name="blackboard"></param>
-        internal IGraphNode Run(object blackboard);
+        internal IGraphNode InitializeAndGetEntryNode(object blackboard);
     }
 }

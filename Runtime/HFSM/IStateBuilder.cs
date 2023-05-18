@@ -1,6 +1,8 @@
 ﻿// Copyright Edanoue, Inc. All Rights Reserved.
 
 #nullable enable
+using System;
+
 namespace Edanoue.HybridGraph
 {
     public interface IStateBuilder
@@ -17,6 +19,10 @@ namespace Edanoue.HybridGraph
         /// <typeparam name="TPrev"></typeparam>
         /// <typeparam name="TNext"></typeparam>
         public void AddTransition<TPrev, TNext>(int trigger)
+            where TPrev : class, IGraphItem, new()
+            where TNext : class, IGraphItem, new();
+
+        public void AddTransition<TPrev, TNext>(Func<bool> condition)
             where TPrev : class, IGraphItem, new()
             where TNext : class, IGraphItem, new();
     }

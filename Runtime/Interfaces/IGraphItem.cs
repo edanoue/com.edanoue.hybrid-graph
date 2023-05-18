@@ -13,6 +13,8 @@ namespace Edanoue.HybridGraph
         /// <param name="nextNode"></param>
         internal void Connect(int trigger, IGraphItem nextNode);
 
+        internal void Connect(Func<bool> trigger, IGraphItem nextNode);
+
         internal void OnInitializedInternal(object blackboard, IGraphBox parent);
 
         internal void WrappedOnEnter();

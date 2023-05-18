@@ -6,5 +6,7 @@ namespace Edanoue.HybridGraph
     public interface IGraphNode : IGraphItem
     {
         internal bool TryGetNextNode(int trigger, out IGraphNode nextNode);
+
+        internal bool TryGetNextNodeWithCondition(out IGraphNode nextNode);
     }
 }

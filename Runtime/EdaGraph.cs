@@ -2,6 +2,7 @@
 
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Edanoue.HybridGraph
 {
@@ -10,18 +11,13 @@ namespace Edanoue.HybridGraph
         private readonly IGraphEntryNode _container;
         private          IGraphNode      _currentNode;
         private          bool            _disposed;
+        private          bool            _isEnter;
         private          IGraphNode?     _nextNode;
 
         private EdaGraph(IGraphEntryNode container, object blackboard)
         {
             _container = container;
-            _currentNode = container.Run(blackboard);
-            _currentNode.WrappedOnEnter();
-
-            if (_nextNode is not null)
-            {
-                Execute();
-            }
+            _currentNode = container.InitializeAndGetEntryNode(blackboard);
         }
 
         public void Dispose()
@@ -39,7 +35,7 @@ namespace Edanoue.HybridGraph
         /// </summary>
         /// <param name="blackboard"></param>
         /// <typeparam name="T"></typeparam>
-        public static EdaGraph Run<T>(object blackboard)
+        public static EdaGraph Create<T>(object blackboard)
             where T : class, IGraphEntryNode, new()
         {
             // Initialize container (StateMachine or BehaviourTree)
@@ -58,10 +54,27 @@ namespace Edanoue.HybridGraph
                 throw new ObjectDisposedException(nameof(EdaGraph));
             }
 
+            if (!_isEnter)
+            {
+                _isEnter = true;
+                if (!CheckCurrentNodeCondition())
+                {
+                    _currentNode.WrappedOnEnter();
+                }
+
+                if (_nextNode is null)
+                {
+                    return;
+                }
+            }
+
             if (_nextNode is null)
             {
-                // 現在のStateのUpdate関数を呼ぶ
-                _currentNode.WrappedOnExecute();
+                if (!CheckCurrentNodeCondition())
+                {
+                    // 現在のStateのUpdate関数を呼ぶ
+                    _currentNode.WrappedOnExecute();
+                }
             }
 
             // 次の遷移先が代入されていたら, ステートを切り替える
@@ -75,8 +88,23 @@ namespace Edanoue.HybridGraph
                 _nextNode = null;
 
                 // 次のステートを開始する
-                _currentNode.WrappedOnEnter();
+                if (!CheckCurrentNodeCondition())
+                {
+                    _currentNode.WrappedOnEnter();
+                }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool CheckCurrentNodeCondition()
+        {
+            if (!_currentNode.TryGetNextNodeWithCondition(out var nextNode))
+            {
+                return false;
+            }
+
+            _nextNode = nextNode;
+            return true;
         }
 
         /// <summary>
