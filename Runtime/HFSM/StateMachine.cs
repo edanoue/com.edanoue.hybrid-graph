@@ -68,7 +68,7 @@ namespace Edanoue.HybridGraph
 
         void IGraphItem.WrappedOnExecute()
         {
-            OnStay();
+            OnExecute();
         }
 
         void IGraphItem.WrappedOnExit(IGraphItem nextNode)
@@ -213,7 +213,7 @@ namespace Edanoue.HybridGraph
         {
         }
 
-        protected virtual void OnStay()
+        protected virtual void OnExecute()
         {
         }
 
