@@ -86,6 +86,7 @@ namespace Edanoue.HybridGraph
 
         void IGraphItem.WrappedOnExecute()
         {
+            _parent?.WrappedOnExecute();
             OnExecute();
         }
 
