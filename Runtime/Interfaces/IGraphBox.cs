@@ -3,8 +3,13 @@
 #nullable enable
 namespace Edanoue.HybridGraph
 {
-    public interface IGraphBox : IGraphItem
+    internal interface IGraphBox : IGraphItem
     {
-        internal bool IsDescendantNode(IGraphItem node);
+        /// <summary>
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="includeDescendants"></param>
+        /// <returns></returns>
+        public bool HasNode(IGraphItem node, bool includeDescendants = true);
     }
 }

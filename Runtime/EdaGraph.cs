@@ -11,7 +11,7 @@ namespace Edanoue.HybridGraph
         private readonly IGraphEntryNode _container;
         private          IGraphNode      _currentNode;
         private          bool            _disposed;
-        private          bool            _isEnter;
+        private          bool            _isEntered;
         private          IGraphNode?     _nextNode;
 
         private EdaGraph(IGraphEntryNode container, object blackboard)
@@ -54,9 +54,9 @@ namespace Edanoue.HybridGraph
                 throw new ObjectDisposedException(nameof(EdaGraph));
             }
 
-            if (!_isEnter)
+            if (!_isEntered)
             {
-                _isEnter = true;
+                _isEntered = true;
                 if (!CheckCurrentNodeCondition())
                 {
                     _currentNode.WrappedOnEnter();

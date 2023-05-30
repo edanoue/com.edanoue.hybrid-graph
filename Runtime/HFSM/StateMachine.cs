@@ -41,11 +41,12 @@ namespace Edanoue.HybridGraph
                 throw new InvalidOperationException("StateMachine is already started.");
             }
 
+            // Setup blackboard and initial state
             Blackboard = (TBlackboard)blackboard ?? throw new ArgumentNullException(nameof(blackboard));
             _parent = parent;
             OnSetupStates(this);
 
-            // Setup validation check
+            // Validation Check
             if (_initialState is null)
             {
                 throw new InvalidOperationException("Initial state is not set.");
@@ -80,7 +81,7 @@ namespace Edanoue.HybridGraph
             }
 
             // 次のノードが自分の子孫ノードなら Container の OnExit は実行しない
-            if (IsDescendantNode(nextNode))
+            if (HasNode(nextNode, true))
             {
                 return;
             }
@@ -95,9 +96,32 @@ namespace Edanoue.HybridGraph
             return _initialState!.GetEntryNode();
         }
 
-        bool IGraphBox.IsDescendantNode(IGraphItem node)
+        public bool HasNode(IGraphItem node, bool includeDescendants)
         {
-            return IsDescendantNode(node);
+            foreach (var child in _children)
+            {
+                if (child == node)
+                {
+                    return true;
+                }
+
+                if (!includeDescendants)
+                {
+                    continue;
+                }
+
+                if (child is not IGraphBox container)
+                {
+                    continue;
+                }
+
+                if (container.HasNode(node))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void Dispose()
@@ -155,27 +179,6 @@ namespace Edanoue.HybridGraph
             var prevState = GetOrCreateState<TPrev>();
             var nextState = GetOrCreateState<TNext>();
             prevState.Connect(condition, nextState);
-        }
-
-        private bool IsDescendantNode(IGraphItem node)
-        {
-            foreach (var child in _children)
-            {
-                if (child == node)
-                {
-                    return true;
-                }
-
-                if (child is IGraphBox container)
-                {
-                    if (container.IsDescendantNode(node))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         private TState GetOrCreateState<TState>()

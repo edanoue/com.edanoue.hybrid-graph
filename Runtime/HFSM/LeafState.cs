@@ -3,7 +3,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Edanoue.HybridGraph
 {
@@ -13,17 +12,15 @@ namespace Edanoue.HybridGraph
     public abstract class LeafState<TBlackboard> : IGraphNode
     {
         /// <summary>
-        /// <para>内部用のTransition Table (Trigger 用)</para>
-        /// </summary>
-        private readonly Dictionary<int, IGraphNode> _transitionTable = new();
-
-        /// <summary>
         /// <para>Transition Table (Condition 用)</para>
         /// <remarks>Trigger とは異なり同一 Node に対しての複数 Condition を許可しないため Key, Value を逆に</remarks>
         /// </summary>
         private readonly Dictionary<IGraphNode, Func<bool>> _transitionTableWithCondition = new();
 
-        private CancellationTokenSource? _onExitCts;
+        /// <summary>
+        /// <para>内部用のTransition Table (Trigger 用)</para>
+        /// </summary>
+        private readonly Dictionary<int, IGraphNode> _transitionTableWithTrigger = new();
 
         private IGraphBox? _parent;
 
@@ -32,31 +29,15 @@ namespace Edanoue.HybridGraph
         /// </summary>
         protected TBlackboard Blackboard = default!;
 
-        /// <summary>
-        /// Gets the cancellation token raised when the State is exited.
-        /// </summary>
-        [Obsolete]
-        protected CancellationToken CancellationTokenOnExit
-        {
-            get
-            {
-                if (_onExitCts is not null)
-                {
-                    return _onExitCts.Token;
-                }
-
-                throw new InvalidOperationException("CancellationTokenOnExit is available when OnEnter or OnStay.");
-            }
-        }
 
         void IGraphItem.Connect(int trigger, IGraphItem nextNode)
         {
-            if (_transitionTable.ContainsKey(trigger))
+            if (_transitionTableWithTrigger.ContainsKey(trigger))
             {
                 throw new ArgumentException($"Already registered trigger: {trigger}");
             }
 
-            _transitionTable.Add(trigger, nextNode.GetEntryNode());
+            _transitionTableWithTrigger.Add(trigger, nextNode.GetEntryNode());
         }
 
         void IGraphItem.Connect(Func<bool> condition, IGraphItem nextNode)
@@ -80,7 +61,6 @@ namespace Edanoue.HybridGraph
         void IGraphItem.WrappedOnEnter()
         {
             _parent?.WrappedOnEnter();
-            _onExitCts = new CancellationTokenSource(); // ToDo: 必要なときだけ生成するように!
             OnEnter();
         }
 
@@ -92,11 +72,6 @@ namespace Edanoue.HybridGraph
 
         void IGraphItem.WrappedOnExit(IGraphItem nextNode)
         {
-            // CancellationTokenをキャンセルする
-            _onExitCts?.Cancel();
-            _onExitCts?.Dispose();
-            _onExitCts = null;
-
             OnExit();
             _parent?.WrappedOnExit(nextNode);
         }
@@ -108,7 +83,7 @@ namespace Edanoue.HybridGraph
 
         bool IGraphNode.TryGetNextNode(int trigger, out IGraphNode nextNode)
         {
-            return _transitionTable.TryGetValue(trigger, out nextNode);
+            return _transitionTableWithTrigger.TryGetValue(trigger, out nextNode);
         }
 
         bool IGraphNode.TryGetNextNodeWithCondition(out IGraphNode nextNode)
@@ -129,17 +104,19 @@ namespace Edanoue.HybridGraph
 
         public void Dispose()
         {
-            // CancellationTokenをキャンセルする
-            _onExitCts?.Cancel();
-            _onExitCts?.Dispose();
-
             OnDestroy();
         }
 
+        /// <summary>
+        /// Called when setup HFSM.
+        /// </summary>
         protected virtual void OnInitialize()
         {
         }
 
+        /// <summary>
+        /// Called when entered this state each times.
+        /// </summary>
         protected virtual void OnEnter()
         {
         }

@@ -1,0 +1,22 @@
+{
+  "name": "Edanoue.HybridGraph.EditorTests",
+  "rootNamespace": "",
+  "references": [
+    "GUID:695c3093c5434594188276b0d9f74358"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
