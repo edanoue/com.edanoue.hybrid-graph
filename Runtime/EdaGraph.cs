@@ -54,12 +54,18 @@ namespace Edanoue.HybridGraph
                 throw new ObjectDisposedException(nameof(EdaGraph));
             }
 
+            var currentNodeEnterSkippedWithCondition = false;
+
             if (!_isEntered)
             {
                 _isEntered = true;
-                if (!CheckCurrentNodeCondition())
+                if (!UpdateNextNodeWithCondition())
                 {
                     _currentNode.WrappedOnEnter();
+                }
+                else
+                {
+                    currentNodeEnterSkippedWithCondition = true;
                 }
 
                 if (_nextNode is null)
@@ -70,7 +76,7 @@ namespace Edanoue.HybridGraph
 
             if (_nextNode is null)
             {
-                if (!CheckCurrentNodeCondition())
+                if (!UpdateNextNodeWithCondition())
                 {
                     // 現在のStateのUpdate関数を呼ぶ
                     _currentNode.WrappedOnExecute();
@@ -81,30 +87,26 @@ namespace Edanoue.HybridGraph
             while (_nextNode is not null)
             {
                 // 以前のステートを終了する
-                _currentNode.WrappedOnExit(_nextNode);
+                if (!currentNodeEnterSkippedWithCondition)
+                {
+                    _currentNode.WrappedOnExit(_nextNode);
+                }
 
                 // ステートの切り替え処理
                 _currentNode = _nextNode;
                 _nextNode = null;
+                currentNodeEnterSkippedWithCondition = false;
 
                 // 次のステートを開始する
-                if (!CheckCurrentNodeCondition())
+                if (!UpdateNextNodeWithCondition())
                 {
                     _currentNode.WrappedOnEnter();
                 }
+                else
+                {
+                    currentNodeEnterSkippedWithCondition = true;
+                }
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool CheckCurrentNodeCondition()
-        {
-            if (!_currentNode.TryGetNextNodeWithCondition(out var nextNode))
-            {
-                return false;
-            }
-
-            _nextNode = nextNode;
-            return true;
         }
 
         /// <summary>
@@ -125,6 +127,22 @@ namespace Edanoue.HybridGraph
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 現在の Node の Condition を確認, 遷移可能なら遷移を行う
+        /// </summary>
+        /// <returns>Condition により NextNode が更新されたら true</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool UpdateNextNodeWithCondition()
+        {
+            if (!_currentNode.TryGetNextNodeWithCondition(out var nextNode))
+            {
+                return false;
+            }
+
+            _nextNode = nextNode;
+            return true;
         }
     }
 }

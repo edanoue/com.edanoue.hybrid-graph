@@ -42,6 +42,29 @@ namespace HFSM
             Assert.That(bb._barExitCount, Is.EqualTo(0));
         }
 
+        [Test]
+        [Category("Normal")]
+        public void Conditionを最初から満たしている場合は遷移が発生する()
+        {
+            // State 侵入時にすでに Condition が満たされている Node に付いてのテスト
+
+            // 起動まで
+            var bb = new BlackboardMockA();
+            var graph = EdaGraph.Create<StateMachineMockA>(bb);
+
+            // Graph 実行時に Foo -> Bar への遷移条件が既に満たされている
+            bb._fooToBar = true;
+
+            // Foo は一切コールバックが呼ばれず, Bar に Enter していることを確認する
+            graph.Execute();
+            Assert.That(bb._fooEnterCount, Is.EqualTo(0));
+            Assert.That(bb._fooExecuteCount, Is.EqualTo(0));
+            Assert.That(bb._fooExitCount, Is.EqualTo(0));
+            Assert.That(bb._barEnterCount, Is.EqualTo(1));
+            Assert.That(bb._barExecuteCount, Is.EqualTo(0));
+            Assert.That(bb._barExitCount, Is.EqualTo(0));
+        }
+
         private class BlackboardMockA
         {
             public int  _barEnterCount;
